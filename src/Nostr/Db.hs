@@ -41,7 +41,7 @@ data Db f = Db {
 data EvT f = Ev {
         _eid :: C f Text 
       , _pub :: PrimaryKey PlebT f
-      , _time :: C f Int64
+      , _time :: C f LocalTime
       , _kind :: C f Int32 
       , _expires :: C f (Maybe LocalTime)
       , _con :: C f Text

@@ -197,13 +197,16 @@ toEv :: Maybe LocalTime -> Event -> EvT Identity
 toEv x e = Ev 
       (wq $ eid e) 
       (PlebId . wq . pubkey . con $ e) 
-      (fromInteger . created_at . con $ e) 
+      (etime . fromInteger . created_at . con $ e) 
       (fromIntegral . kind . con $ e)
       x
       (wq e)
 
 mxpiry :: Int64 -> Maybe LocalTime
-mxpiry = Just . zonedTimeToLocalTime  . utcToZonedTime utc 
+mxpiry = Just . etime 
+
+etime :: Int64 -> LocalTime
+etime = zonedTimeToLocalTime  . utcToZonedTime utc 
               . posixSecondsToUTCTime . realToFrac 
 
 calcExpiry :: Event -> IO (Maybe LocalTime)
@@ -288,6 +291,8 @@ getQf Filter{..} =
     do  e <- all_ (_events spec')
 
         guard_ $ fromMaybe_ currentTimestamp_ (_expires e) >=. currentTimestamp_ 
+
+        guard_ $ _time e <=. currentTimestamp_
         
         case idsF of 
             Just (Ids (P.map (val_ . (<>"%")) -> px)) -> 
@@ -321,12 +326,12 @@ getQf Filter{..} =
             _ -> pure () 
 
         case sinceF of 
-            Just (Since (fromIntegral -> s)) -> 
+            Just (Since (etime . fromIntegral -> s)) -> 
                 guard_ $ (_time e >. val_ s )
             _ -> pure ()
 
         case untilF of 
-            Just (Until (fromIntegral -> u)) -> 
+            Just (Until (etime . fromIntegral -> u)) -> 
                 guard_ $ (_time e <. val_ u )
             _ -> pure () 
 
